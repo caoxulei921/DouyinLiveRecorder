@@ -580,6 +580,7 @@ async def get_bilibili_room_info_h5(url: str, proxy_addr: OptionalStr = None, co
         'origin': 'https://live.bilibili.com',
         'referer': 'https://live.bilibili.com/',
         'user-agent': 'Mozilla/5.0 (Linux; Android 8.0.0; SM-G955U Build/R16NW) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Mobile Safari/537.36 Edg/121.0.0.0',
+        'Cookie':'buvid3=AB5EDAAB-AA8E-AC18-65A7-679609B22F4304676infoc; b_nut=1718606604; _uuid=6895103C5-1035B-86B3-2D6C-FA179D910DE8804880infoc; buvid4=55309E46-25D4-1F76-115A-1FD81BF253A106017-024061706-mCLwKP8OAB1fc%2BO3lxKmwA%3D%3D;' # up主动态页审查元素自行获取，必传
     }
     if cookies:
         headers['Cookie'] = cookies
@@ -602,24 +603,20 @@ async def get_bilibili_room_info(url: str, proxy_addr: OptionalStr = None, cooki
     if cookies:
         headers['Cookie'] = cookies
 
-    try:
-        room_id = url.split('?')[0].rsplit('/', maxsplit=1)[1]
-        json_str = await async_req(f'https://api.live.bilibili.com/room/v1/Room/room_init?id={room_id}',
-                           proxy_addr=proxy_addr, headers=headers)
-        room_info = json.loads(json_str)
-        uid = room_info['data']['uid']
-        live_status = True if room_info['data']['live_status'] == 1 else False
+    room_id = url.split('?')[0].rsplit('/', maxsplit=1)[1]
+    json_str = await async_req(f'https://api.live.bilibili.com/room/v1/Room/room_init?id={room_id}',
+                        proxy_addr=proxy_addr, headers=headers)
+    room_info = json.loads(json_str)
+    uid = room_info['data']['uid']
+    live_status = True if room_info['data']['live_status'] == 1 else False
 
-        api = f'https://api.live.bilibili.com/live_user/v1/Master/info?uid={uid}'
-        json_str2 = await async_req(url=api, proxy_addr=proxy_addr, headers=headers)
-        anchor_info = json.loads(json_str2)
-        anchor_name = anchor_info['data']['info']['uname']
+    api = f'https://api.live.bilibili.com/live_user/v1/Master/info?uid={uid}'
+    json_str2 = await async_req(url=api, proxy_addr=proxy_addr, headers=headers)
+    anchor_info = json.loads(json_str2)
+    anchor_name = anchor_info['data']['info']['uname']
 
-        title = await get_bilibili_room_info_h5(url, proxy_addr, cookies)
-        return {"anchor_name": anchor_name, "live_status": live_status, "room_url": url, "title": title}
-    except Exception as e:
-        print(e)
-        return {"anchor_name": '', "live_status": False, "room_url": url}
+    title = await get_bilibili_room_info_h5(url, proxy_addr, cookies)
+    return {"anchor_name": anchor_name, "live_status": live_status, "room_url": url, "title": title}
 
 
 @trace_error_decorator
