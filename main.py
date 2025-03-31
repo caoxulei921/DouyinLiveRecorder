@@ -1027,7 +1027,7 @@ def start_record(url_data: tuple, count_variable: int = -1) -> None:
                                 title_in_name = ''
                                 if live_title:
                                     live_title = clean_name(live_title)
-                                    title_in_name = live_title + '_' if filename_by_title else ''
+                                    title_in_name = utils.clean_title_for_filename(live_title) + '_' if filename_by_title else ''
 
                                 try:
                                     if len(video_save_path) > 0:
@@ -1246,7 +1246,7 @@ def start_record(url_data: tuple, count_variable: int = -1) -> None:
                                             error_window.append(1)
 
                                 elif video_save_type == "MP4":
-                                    filename = anchor_name + f'_{title_in_name}' + now + ".mp4"
+                                    filename = f'{title_in_name}' + now + ".mp4"
                                     print(f'{rec_info}/{filename}')
                                     save_file_path = full_path + '/' + filename
 
@@ -1647,7 +1647,7 @@ while True:
     folder_by_author = options.get(read_config_value(config, '录制设置', '保存文件夹是否以作者区分', "是"), False)
     folder_by_time = options.get(read_config_value(config, '录制设置', '保存文件夹是否以时间区分', "否"), False)
     folder_by_title = options.get(read_config_value(config, '录制设置', '保存文件夹是否以标题区分', "否"), False)
-    filename_by_title = options.get(read_config_value(config, '录制设置', '保存文件名是否包含标题', "否"), False)
+    filename_by_title = options.get(read_config_value(config, '录制设置', '保存文件名是否包含标题', "是"), False)
     clean_emoji = options.get(read_config_value(config, '录制设置', '是否去除名称中的表情符号', "是"), True)
     video_save_type = read_config_value(config, '录制设置', '视频保存格式ts|mkv|flv|mp4|mp3音频|m4a音频', "ts")
     video_record_quality = read_config_value(config, '录制设置', '原画|超清|高清|标清|流畅', "原画")

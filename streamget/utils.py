@@ -191,3 +191,12 @@ def replace_url(file_path: str | Path, old: str, new: str) -> None:
     if old in content:
         with open(file_path, 'w', encoding='utf-8-sig') as f:
             f.write(content.replace(old, new))
+
+def clean_title_for_filename(title: str) -> str:
+    """
+    清洗标题，移除特殊字符、感叹号、空格、双引号、单引号和中文引号以用于文件保存。
+    """
+    import re
+    # 使用正则表达式移除特殊字符、感叹号、空格、双引号、单引号和中文引号
+    cleaned_title = re.sub(r'[<>:"/\\|?*!\s\'“”]', '', title)
+    return cleaned_title
