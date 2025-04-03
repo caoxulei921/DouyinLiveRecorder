@@ -22,6 +22,7 @@ import re
 import json
 import execjs
 import urllib.request
+from datetime import datetime
 from . import JS_SCRIPT_PATH, utils
 from .utils import trace_error_decorator
 from .logger import script_path
@@ -609,14 +610,18 @@ async def get_bilibili_room_info(url: str, proxy_addr: OptionalStr = None, cooki
     room_info = json.loads(json_str)
     uid = room_info['data']['uid']
     live_status = True if room_info['data']['live_status'] == 1 else False
-
+    live_time = int(room_info['data']['live_time'])
+    if live_time > 0:
+        live_time = datetime.fromtimestamp(live_time).strftime('%H:%M:%S')
+    else:
+        live_time = None
     api = f'https://api.live.bilibili.com/live_user/v1/Master/info?uid={uid}'
     json_str2 = await async_req(url=api, proxy_addr=proxy_addr, headers=headers)
     anchor_info = json.loads(json_str2)
     anchor_name = anchor_info['data']['info']['uname']
 
     title = await get_bilibili_room_info_h5(url, proxy_addr, cookies)
-    return {"anchor_name": anchor_name, "live_status": live_status, "room_url": url, "title": title}
+    return {"anchor_name": anchor_name, "live_status": live_status, "room_url": url, "title": title, "live_time": live_time}
 
 
 @trace_error_decorator

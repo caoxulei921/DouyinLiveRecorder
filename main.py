@@ -37,6 +37,7 @@ from msg_push import (
 from ffmpeg_install import (
     check_ffmpeg, ffmpeg_path, current_env_path
 )
+from sqlite_wrapper import LiveSQL
 
 version = "v4.0.3"
 platforms = ("\n国内站点：抖音|快手|虎牙|斗鱼|YY|B站|小红书|bigo|blued|网易CC|千度热播|猫耳FM|Look|TwitCasting|百度|微博|"
@@ -92,10 +93,10 @@ def display_info() -> None:
     time.sleep(5)
     while True:
         try:
-            sys.stdout.flush()  # 强制刷新输出缓冲区
+            #sys.stdout.flush()  # 强制刷新输出缓冲区
             time.sleep(5)
-            if Path(sys.executable).name != 'pythonw.exe':
-                os.system(clear_command)
+            #if Path(sys.executable).name != 'pythonw.exe':
+            #    os.system(clear_command)
             print(f"\r共监测{monitoring}个直播中", end=" | ")
             print(f"同一时间访问网络的线程数: {max_request}", end=" | ")
             print(f"是否开启代理录制: {'是' if use_proxy else '否'}", end=" | ")
@@ -131,7 +132,7 @@ def display_info() -> None:
                 print("x" * 60)
                 start_display_time = now_time
         except Exception as e:
-            logger.error(f"错误信息: {e} 发生错误的行数: {e.__traceback__.tb_lineno}")
+            logger.error(f"错误信息: {e} 发生错误的行数: {e.__traceback__.tb_lineno}  {e.__traceback__.tb_frame.f_code.co_filename}")
 
 
 def update_file(file_path: str, old_str: str, new_str: str, start_str: str = None) -> str | None:
@@ -149,7 +150,7 @@ def update_file(file_path: str, old_str: str, new_str: str, start_str: str = Non
                     if text_line not in file_data:
                         file_data.append(text_line)
             except RuntimeError as e:
-                logger.error(f"错误信息: {e} 发生错误的行数: {e.__traceback__.tb_lineno}")
+                logger.error(f"错误信息: {e} 发生错误的行数: {e.__traceback__.tb_lineno}  {e.__traceback__.tb_frame.f_code.co_filename}")
                 if ini_URL_content:
                     with open(file_path, "w", encoding=text_encoding) as f2:
                         f2.write(ini_URL_content)
@@ -1049,7 +1050,7 @@ def start_record(url_data: tuple, count_variable: int = -1) -> None:
                                     if not os.path.exists(full_path):
                                         os.makedirs(full_path)
                                 except Exception as e:
-                                    logger.error(f"错误信息: {e} 发生错误的行数: {e.__traceback__.tb_lineno}")
+                                    logger.error(f"错误信息: {e} 发生错误的行数: {e.__traceback__.tb_lineno}  {e.__traceback__.tb_frame.f_code.co_filename}")
 
                                 if platform != '自定义录制直播':
                                     if enable_https_recording and real_url.startswith("http://"):
@@ -1123,6 +1124,21 @@ def start_record(url_data: tuple, count_variable: int = -1) -> None:
                                 start_record_time = datetime.datetime.now()
                                 recording_time_list[record_name] = [start_record_time, record_quality_zh]
                                 rec_info = f"\r{anchor_name} 准备开始录制视频: {full_path}"
+
+                                # 更新数据库插入录制数据
+                                record_id = livesql.add_live_record(
+                                    {
+                                        "platform": platform,
+                                        "anchor": anchor_name,
+                                        "status": 1,    # 直播中
+                                        "title": live_title,
+                                        "start_time": json_data["live_time"],
+                                        "storage_path" : full_path
+                                    }
+                                )
+                                if record_id is not None:
+                                    print ("数据库插入成功")
+
                                 if show_url:
                                     re_plat = ('WinkTV', 'PandaTV', 'ShowRoom', 'CHZZK', 'Youtube')
                                     if platform in re_plat:
@@ -1166,7 +1182,7 @@ def start_record(url_data: tuple, count_variable: int = -1) -> None:
                                         color_obj.print_colored(
                                             f"\n{anchor_name} {time.strftime('%Y-%m-%d %H:%M:%S')} 直播录制出错,请检查网络\n",
                                             color_obj.RED)
-                                        logger.error(f"错误信息: {e} 发生错误的行数: {e.__traceback__.tb_lineno}")
+                                        logger.error(f"错误信息: {e} 发生错误的行数: {e.__traceback__.tb_lineno} {e.__traceback__.tb_frame.f_code.co_filename}")
                                         with max_request_lock:
                                             error_count += 1
                                             error_window.append(1)
@@ -1240,7 +1256,7 @@ def start_record(url_data: tuple, count_variable: int = -1) -> None:
                                             return
 
                                     except subprocess.CalledProcessError as e:
-                                        logger.error(f"错误信息: {e} 发生错误的行数: {e.__traceback__.tb_lineno}")
+                                        logger.error(f"错误信息: {e} 发生错误的行数: {e.__traceback__.tb_lineno}  {e.__traceback__.tb_frame.f_code.co_filename}")
                                         with max_request_lock:
                                             error_count += 1
                                             error_window.append(1)
@@ -1287,7 +1303,7 @@ def start_record(url_data: tuple, count_variable: int = -1) -> None:
                                             return
 
                                     except subprocess.CalledProcessError as e:
-                                        logger.error(f"错误信息: {e} 发生错误的行数: {e.__traceback__.tb_lineno}")
+                                        logger.error(f"错误信息: {e} 发生错误的行数: {e.__traceback__.tb_lineno}  {e.__traceback__.tb_frame.f_code.co_filename}")
                                         with max_request_lock:
                                             error_count += 1
                                             error_window.append(1)
@@ -1357,7 +1373,7 @@ def start_record(url_data: tuple, count_variable: int = -1) -> None:
                                             return
 
                                     except subprocess.CalledProcessError as e:
-                                        logger.error(f"错误信息: {e} 发生错误的行数: {e.__traceback__.tb_lineno}")
+                                        logger.error(f"错误信息: {e} 发生错误的行数: {e.__traceback__.tb_lineno}  {e.__traceback__.tb_frame.f_code.co_filename}")
                                         with max_request_lock:
                                             error_count += 1
                                             error_window.append(1)
@@ -1406,7 +1422,7 @@ def start_record(url_data: tuple, count_variable: int = -1) -> None:
 
                                         except subprocess.CalledProcessError as e:
                                             logger.error(
-                                                f"错误信息: {e} 发生错误的行数: {e.__traceback__.tb_lineno}")
+                                                f"错误信息: {e} 发生错误的行数: {e.__traceback__.tb_lineno}  {e.__traceback__.tb_frame.f_code.co_filename}")
                                             with max_request_lock:
                                                 error_count += 1
                                                 error_window.append(1)
@@ -1448,7 +1464,7 @@ def start_record(url_data: tuple, count_variable: int = -1) -> None:
                                 count_time = time.time()
 
                 except Exception as e:
-                    logger.error(f"错误信息: {e} 发生错误的行数: {e.__traceback__.tb_lineno}")
+                    logger.error(f"错误信息: {e} 发生错误的行数: {e.__traceback__.tb_lineno}  {e.__traceback__.tb_frame.f_code.co_filename}")
                     with max_request_lock:
                         error_count += 1
                         error_window.append(1)
@@ -1482,7 +1498,7 @@ def start_record(url_data: tuple, count_variable: int = -1) -> None:
                 if loop_time:
                     print('\r检测直播间中...', end="")
         except Exception as e:
-            logger.error(f"错误信息: {e} 发生错误的行数: {e.__traceback__.tb_lineno}")
+            logger.error(f"错误信息: {e} 发生错误的行数: {e.__traceback__.tb_lineno}  {e.__traceback__.tb_frame.f_code.co_filename}")
             with max_request_lock:
                 error_count += 1
                 error_window.append(1)
@@ -1642,7 +1658,7 @@ while True:
                 file.write(input_url)
     except OSError as err:
         logger.error(f"发生 I/O 错误: {err}")
-
+    db_path = read_config_value(config, '数据库设置', '数据库路径', "./sqlite.db")
     video_save_path = read_config_value(config, '录制设置', '直播保存路径(不填则默认)', "")
     folder_by_author = options.get(read_config_value(config, '录制设置', '保存文件夹是否以作者区分', "是"), False)
     folder_by_time = options.get(read_config_value(config, '录制设置', '保存文件夹是否以时间区分', "否"), False)
@@ -1763,6 +1779,8 @@ while True:
     jd_cookie = read_config_value(config, 'Cookie', 'jd_cookie', '')
     faceit_cookie = read_config_value(config, 'Cookie', 'faceit_cookie', '')
 
+
+    livesql = LiveSQL(db_path)
     video_save_type_list = ("FLV", "MKV", "TS", "MP4", "MP3音频", "M4A音频")
     if video_save_type and video_save_type.upper() in video_save_type_list:
         video_save_type = video_save_type.upper()
@@ -1974,7 +1992,7 @@ while True:
         first_start = False
 
     except Exception as err:
-        logger.error(f"错误信息: {err} 发生错误的行数: {err.__traceback__.tb_lineno}")
+        logger.error(f"错误信息: {err} 发生错误的行数: {err.__traceback__.tb_lineno}  {e.__traceback__.tb_frame.f_code.co_filename}")
 
     if first_run:
         t = threading.Thread(target=display_info, args=(), daemon=True)
